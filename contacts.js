@@ -1,110 +1,70 @@
-const fs = require("fs");
+const fs = require("fs").promises;
 const path = require("path");
 const uniqid = require("uniqid");
 
 const contactsPath = path.join(__dirname, "db", "contacts.json");
 
-function listContacts() {
-  fs.readFile(contactsPath, "utf8", (err, data) => {
-    if (err) {
-      console.error("Błąd odczytu pliku:", err);
-      return;
-    }
-
-    try {
-      const contacts = JSON.parse(data);
-      console.log("Kontakty:", contacts);
-    } catch (parseError) {
-      console.error("Błąd parsowania danych:", parseError);
-    }
-  });
+async function listContacts() {
+  try {
+    const data = await fs.readFile(contactsPath, "utf8");
+    const contacts = JSON.parse(data);
+    console.log("Kontakty:", contacts);
+  } catch (err) {
+    console.error("Błąd odczytu pliku:", err);
+  }
 }
 
-function getContactById(contactId) {
-  fs.readFile(contactsPath, "utf8", (err, data) => {
-    if (err) {
-      console.error("Błąd odczytu pliku:", err);
-      return;
+async function getContactById(contactId) {
+  try {
+    const data = await fs.readFile(contactsPath, "utf8");
+    const contacts = JSON.parse(data);
+    const contact = contacts.find((c) => c.id === contactId);
+    if (contact) {
+      console.log("Znaleziony kontakt:", contact);
+    } else {
+      console.log("Nie znaleziono kontaktu o podanym ID.");
     }
-
-    try {
-      const contacts = JSON.parse(data);
-      const contact = contacts.find((c) => c.id === contactId);
-      if (contact) {
-        console.log("Znaleziony kontakt:", contact);
-      } else {
-        console.log("Nie znaleziono kontaktu o podanym ID.");
-      }
-    } catch (parseError) {
-      console.error("Błąd parsowania danych:", parseError);
-    }
-  });
+  } catch (err) {
+    console.error("Błąd odczytu pliku:", err);
+  }
 }
 
-function removeContact(contactId) {
-  fs.readFile(contactsPath, "utf8", (err, data) => {
-    if (err) {
-      console.error("Błąd odczytu pliku:", err);
+async function removeContact(contactId) {
+  try {
+    let data = await fs.readFile(contactsPath, "utf8");
+    let contacts = JSON.parse(data);
+    const updatedContacts = contacts.filter((c) => c.id !== contactId);
+    if (contacts.length === updatedContacts.length) {
+      console.log("Nie znaleziono kontaktu o podanym ID.");
       return;
     }
-
-    try {
-      let contacts = JSON.parse(data);
-      const updatedContacts = contacts.filter((c) => c.id !== contactId);
-      if (contacts.length === updatedContacts.length) {
-        console.log("Nie znaleziono kontaktu o podanym ID.");
-        return;
-      }
-      fs.writeFile(
-        contactsPath,
-        JSON.stringify(updatedContacts, null, 2),
-        "utf8",
-        (err) => {
-          if (err) {
-            console.error("Błąd zapisu pliku:", err);
-            return;
-          }
-          console.log("Kontakt został usunięty.");
-        }
-      );
-    } catch (parseError) {
-      console.error("Błąd parsowania danych:", parseError);
-    }
-  });
+    await fs.writeFile(
+      contactsPath,
+      JSON.stringify(updatedContacts, null, 2),
+      "utf8"
+    );
+    console.log("Kontakt został usunięty.");
+  } catch (err) {
+    console.error("Błąd operacji na pliku:", err);
+  }
 }
 
-function addContact(name, email, phone) {
-  fs.readFile(contactsPath, "utf8", (err, data) => {
-    if (err) {
-      console.error("Błąd odczytu pliku:", err);
-      return;
-    }
-
-    try {
-      let contacts = JSON.parse(data);
-      const newContact = {
-        id: uniqid(),
-        name,
-        email,
-        phone,
-      };
-      contacts.push(newContact);
-      fs.writeFile(
-        contactsPath,
-        JSON.stringify(contacts, null, 2),
-        "utf8",
-        (err) => {
-          if (err) {
-            console.error("Błąd zapisu pliku:", err);
-            return;
-          }
-          console.log("Nowy kontakt został dodany.");
-        }
-      );
-    } catch (parseError) {
-      console.error("Błąd parsowania danych:", parseError);
-    }
-  });
+async function addContact(name, email, phone) {
+  try {
+    let data = await fs.readFile(contactsPath, "utf8");
+    let contacts = JSON.parse(data);
+    const newContact = {
+      id: uniqid(),
+      name,
+      email,
+      phone,
+    };
+    contacts.push(newContact);
+    await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2), "utf8");
+    console.log("Nowy kontakt został dodany.");
+  } catch (err) {
+    console.error("Błąd operacji na pliku:", err);
+  }
 }
 
 module.exports = {
@@ -113,5 +73,3 @@ module.exports = {
   removeContact,
   addContact,
 };
-
-// Math.random().toString(36).substr(2, 10), // Generowanie losowego ID
